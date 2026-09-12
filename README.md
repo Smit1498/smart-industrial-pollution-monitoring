@@ -1,5 +1,3 @@
-# smart-industrial-pollution-monitoring
-AI-powered smart industrial pollution monitoring system for Gujarat Golden Corridor using Python, FastAPI and IBM Granite integration.
 # 🌍 Industrial Pollution Monitoring AI
 
 ### Agentic AI for Real-Time Industrial Pollution Intelligence
@@ -717,7 +715,23 @@ Dashboard displays incident and recommended action
 
 ---
 
+## 📸 Screenshots
 
+Add screenshots of your dashboard here:
+
+```text
+dashboard/
+├── overview.png
+├── risk-analysis.png
+├── pollution-trends.png
+└── alerts.png
+```
+
+Example:
+
+![Dashboard Preview](dashboard/overview.png)
+
+---
 
 ## 🌱 Project Vision
 
