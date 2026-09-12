@@ -717,23 +717,7 @@ Dashboard displays incident and recommended action
 
 ---
 
-## 📸 Screenshots
 
-Add screenshots of your dashboard here:
-
-```text
-dashboard/
-├── overview.png
-├── risk-analysis.png
-├── pollution-trends.png
-└── alerts.png
-```
-
-Example:
-
-![Dashboard Preview](dashboard/overview.png)
-
----
 
 ## 🌱 Project Vision
 
