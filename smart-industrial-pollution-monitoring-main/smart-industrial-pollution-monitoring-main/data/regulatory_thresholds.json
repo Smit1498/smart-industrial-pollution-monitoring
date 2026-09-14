@@ -1,0 +1,236 @@
+{
+  "_meta": {
+    "version": "1.0.0",
+    "source": "CPCB India / MoEFCC NAAQS & NWQS guidelines (reference only)",
+    "note": "These are reference thresholds only. Always cross-check with the latest official gazette notifications. Never claim legally confirmed violation without verified official data.",
+    "last_updated": "2024-01-01",
+    "unit_system": "SI"
+  },
+  "air": {
+    "PM2.5": {
+      "unit": "µg/m³",
+      "media": "AIR",
+      "hazard_class": "HIGH",
+      "limits": {
+        "annual_average": { "value": 40, "standard": "NAAQS India", "category": "ambient" },
+        "24h_average":    { "value": 60, "standard": "NAAQS India", "category": "ambient" },
+        "industrial_zone_24h": { "value": 60, "standard": "CPCB", "category": "industrial" }
+      },
+      "warning_factor": 0.80,
+      "early_warning_factor": 0.65
+    },
+    "PM10": {
+      "unit": "µg/m³",
+      "media": "AIR",
+      "hazard_class": "MEDIUM",
+      "limits": {
+        "annual_average": { "value": 60,  "standard": "NAAQS India", "category": "ambient" },
+        "24h_average":    { "value": 100, "standard": "NAAQS India", "category": "ambient" },
+        "industrial_zone_24h": { "value": 100, "standard": "CPCB", "category": "industrial" }
+      },
+      "warning_factor": 0.80,
+      "early_warning_factor": 0.65
+    },
+    "SO2": {
+      "unit": "µg/m³",
+      "media": "AIR",
+      "hazard_class": "HIGH",
+      "limits": {
+        "annual_average":  { "value": 50,  "standard": "NAAQS India", "category": "ambient" },
+        "24h_average":     { "value": 80,  "standard": "NAAQS India", "category": "ambient" },
+        "1h_average":      { "value": 100, "standard": "CPCB", "category": "industrial" }
+      },
+      "warning_factor": 0.80,
+      "early_warning_factor": 0.65
+    },
+    "NO2": {
+      "unit": "µg/m³",
+      "media": "AIR",
+      "hazard_class": "HIGH",
+      "limits": {
+        "annual_average":  { "value": 40,  "standard": "NAAQS India", "category": "ambient" },
+        "24h_average":     { "value": 80,  "standard": "NAAQS India", "category": "ambient" },
+        "1h_average":      { "value": 100, "standard": "CPCB", "category": "industrial" }
+      },
+      "warning_factor": 0.80,
+      "early_warning_factor": 0.65
+    },
+    "CO": {
+      "unit": "mg/m³",
+      "media": "AIR",
+      "hazard_class": "HIGH",
+      "limits": {
+        "8h_average":  { "value": 2.0,  "standard": "NAAQS India", "category": "ambient" },
+        "1h_average":  { "value": 4.0,  "standard": "NAAQS India", "category": "ambient" }
+      },
+      "warning_factor": 0.80,
+      "early_warning_factor": 0.65
+    },
+    "CO2": {
+      "unit": "ppm",
+      "media": "AIR",
+      "hazard_class": "LOW",
+      "limits": {
+        "ambient":         { "value": 1000, "standard": "OSHA indoor", "category": "ambient" },
+        "occupational_8h": { "value": 5000, "standard": "OSHA PEL",    "category": "occupational" }
+      },
+      "warning_factor": 0.80,
+      "early_warning_factor": 0.65
+    },
+    "VOC": {
+      "unit": "µg/m³",
+      "media": "AIR",
+      "hazard_class": "HIGH",
+      "limits": {
+        "8h_average": { "value": 500, "standard": "CPCB", "category": "industrial" }
+      },
+      "warning_factor": 0.80,
+      "early_warning_factor": 0.65
+    },
+    "NH3": {
+      "unit": "µg/m³",
+      "media": "AIR",
+      "hazard_class": "HIGH",
+      "limits": {
+        "annual_average": { "value": 100, "standard": "NAAQS India", "category": "ambient" },
+        "24h_average":    { "value": 400, "standard": "NAAQS India", "category": "ambient" }
+      },
+      "warning_factor": 0.80,
+      "early_warning_factor": 0.65
+    },
+    "H2S": {
+      "unit": "µg/m³",
+      "media": "AIR",
+      "hazard_class": "CRITICAL",
+      "limits": {
+        "1h_average": { "value": 40,  "standard": "CPCB", "category": "ambient" },
+        "8h_average": { "value": 7,   "standard": "CPCB IDLH reference", "category": "ambient" }
+      },
+      "warning_factor": 0.75,
+      "early_warning_factor": 0.55
+    },
+    "O3": {
+      "unit": "µg/m³",
+      "media": "AIR",
+      "hazard_class": "HIGH",
+      "limits": {
+        "8h_average": { "value": 100, "standard": "NAAQS India", "category": "ambient" },
+        "1h_average": { "value": 180, "standard": "NAAQS India", "category": "ambient" }
+      },
+      "warning_factor": 0.80,
+      "early_warning_factor": 0.65
+    }
+  },
+  "water": {
+    "pH": {
+      "unit": "pH",
+      "media": "WATER",
+      "hazard_class": "MEDIUM",
+      "limits": {
+        "effluent_discharge": { "min": 6.5, "max": 9.0, "standard": "CPCB ETP", "category": "effluent" },
+        "surface_water":      { "min": 6.5, "max": 8.5, "standard": "IS 2296",  "category": "ambient" }
+      },
+      "warning_factor": 0.90,
+      "early_warning_factor": 0.80
+    },
+    "BOD": {
+      "unit": "mg/L",
+      "media": "WATER",
+      "hazard_class": "HIGH",
+      "limits": {
+        "effluent_discharge": { "value": 30,  "standard": "CPCB ETP", "category": "effluent" },
+        "inland_surface":     { "value": 3,   "standard": "IS 2296 Class A", "category": "ambient" }
+      },
+      "warning_factor": 0.80,
+      "early_warning_factor": 0.65
+    },
+    "COD": {
+      "unit": "mg/L",
+      "media": "WATER",
+      "hazard_class": "HIGH",
+      "limits": {
+        "effluent_discharge": { "value": 250, "standard": "CPCB ETP", "category": "effluent" }
+      },
+      "warning_factor": 0.80,
+      "early_warning_factor": 0.65
+    },
+    "TSS": {
+      "unit": "mg/L",
+      "media": "WATER",
+      "hazard_class": "MEDIUM",
+      "limits": {
+        "effluent_discharge": { "value": 100, "standard": "CPCB ETP", "category": "effluent" }
+      },
+      "warning_factor": 0.80,
+      "early_warning_factor": 0.65
+    },
+    "DO": {
+      "unit": "mg/L",
+      "media": "WATER",
+      "hazard_class": "HIGH",
+      "limits": {
+        "minimum_surface": { "min": 6.0, "standard": "IS 2296 Class A", "category": "ambient" }
+      },
+      "warning_factor": 0.90,
+      "early_warning_factor": 0.80,
+      "invert": true
+    },
+    "WaterTemp": {
+      "unit": "°C",
+      "media": "WATER",
+      "hazard_class": "MEDIUM",
+      "limits": {
+        "effluent_discharge": { "max": 45, "standard": "CPCB ETP", "category": "effluent" }
+      },
+      "warning_factor": 0.90,
+      "early_warning_factor": 0.80
+    },
+    "Conductivity": {
+      "unit": "µS/cm",
+      "media": "WATER",
+      "hazard_class": "MEDIUM",
+      "limits": {
+        "drinking_water": { "max": 750, "standard": "BIS 10500", "category": "drinking" },
+        "surface_water":  { "max": 2500, "standard": "CPCB",     "category": "ambient" }
+      },
+      "warning_factor": 0.80,
+      "early_warning_factor": 0.65
+    },
+    "Turbidity": {
+      "unit": "NTU",
+      "media": "WATER",
+      "hazard_class": "MEDIUM",
+      "limits": {
+        "drinking_water": { "max": 4,  "standard": "BIS 10500", "category": "drinking" },
+        "surface_water":  { "max": 10, "standard": "CPCB",      "category": "ambient" }
+      },
+      "warning_factor": 0.80,
+      "early_warning_factor": 0.65
+    },
+    "HeavyMetals": {
+      "unit": "mg/L",
+      "media": "WATER",
+      "hazard_class": "CRITICAL",
+      "limits": {
+        "effluent_discharge": { "value": 2.0, "standard": "CPCB ETP aggregate", "category": "effluent" }
+      },
+      "warning_factor": 0.70,
+      "early_warning_factor": 0.50
+    }
+  },
+  "zone_overrides": {
+    "Vapi": {
+      "note": "Special Industrial Area — GIDC Vapi. Stricter monitoring.",
+      "SO2": { "1h_average": { "value": 80 } },
+      "H2S": { "1h_average": { "value": 30 } }
+    },
+    "Ankleshwar": {
+      "note": "GIDC Ankleshwar chemical/pharma cluster.",
+      "VOC":  { "8h_average": { "value": 400 } }
+    },
+    "Vatva": {
+      "note": "GIDC Vatva — textile/chemical mix.",
+      "COD":  { "effluent_discharge": { "value": 200 } }
+    }
+  }
+}

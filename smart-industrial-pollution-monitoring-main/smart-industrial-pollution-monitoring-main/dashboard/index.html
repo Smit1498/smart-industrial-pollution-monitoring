@@ -1,0 +1,1301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Industrial Pollution Monitoring — Gujarat Golden Corridor</title>
+<style>
+:root{
+  --bg:#0b0e17;--surface:#131720;--surface2:#1c2030;--surface3:#232840;
+  --border:#2a2f45;--border2:#343b56;
+  --text:#e4e6f0;--muted:#6b7494;--muted2:#8b93b8;
+  --accent:#4f8ef7;--accent2:#6ea8fe;
+  --ok:#22c55e;--warn:#f59e0b;--danger:#ef4444;--critical:#dc2626;
+  --elevated:#f97316;--moderate:#3b82f6;
+  --font:-apple-system,"Segoe UI",system-ui,sans-serif;
+  --sidebar:220px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:14px;line-height:1.5;display:flex;flex-direction:column}
+
+/* ── Layout ── */
+#app{display:flex;flex:1;overflow:hidden}
+#sidebar{width:var(--sidebar);background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto}
+#content{flex:1;display:flex;flex-direction:column;overflow:hidden}
+#topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 20px;height:52px;display:flex;align-items:center;gap:12px;flex-shrink:0}
+#main-area{flex:1;overflow-y:auto;padding:20px 24px}
+
+/* ── Sidebar ── */
+.sidebar-logo{padding:16px 16px 12px;border-bottom:1px solid var(--border)}
+.sidebar-logo .app-name{font-size:13px;font-weight:700;color:var(--text);line-height:1.3}
+.sidebar-logo .app-sub{font-size:10px;color:var(--muted);margin-top:2px;line-height:1.4}
+.sidebar-section{padding:8px 0;border-bottom:1px solid var(--border)}
+.sidebar-label{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);padding:8px 16px 4px}
+.nav-btn{display:flex;align-items:center;gap:10px;width:100%;background:none;border:none;color:var(--muted2);padding:8px 16px;cursor:pointer;font-size:13px;text-align:left;transition:.15s;border-left:2px solid transparent}
+.nav-btn:hover{color:var(--text);background:var(--surface2)}
+.nav-btn.active{color:var(--accent2);background:var(--surface2);border-left-color:var(--accent)}
+.nav-btn .icon{font-size:14px;width:18px;text-align:center;flex-shrink:0}
+.nav-badge{margin-left:auto;background:var(--danger);color:#fff;border-radius:10px;padding:1px 6px;font-size:10px;font-weight:700}
+
+/* ── Topbar ── */
+.status-dot{width:8px;height:8px;border-radius:50%;background:var(--ok);flex-shrink:0}
+.status-dot.warn{background:var(--warn)}
+.status-dot.bad{background:var(--danger)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+.pulsing{animation:pulse 2s infinite}
+.top-title{font-size:15px;font-weight:600}
+.top-sub{font-size:11px;color:var(--muted);margin-top:1px}
+.source-badge{padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600;background:#1e3a5f55;color:var(--accent2);border:1px solid var(--accent)33}
+.source-badge.sim{background:#7c2d1233;color:#fb923c;border-color:var(--elevated)33}
+.ws-chip{font-size:11px;padding:3px 10px;border-radius:12px;background:#14532d33;color:#4ade80;border:1px solid #22c55e33}
+.ws-chip.off{background:#7f1d1d33;color:#f87171;border-color:var(--danger)33}
+#lastUpdate{font-size:11px;color:var(--muted)}
+.btn{background:var(--accent);color:#fff;border:none;padding:7px 14px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:500;transition:.15s}
+.btn:hover{opacity:.85}
+.btn-sm{padding:5px 10px;font-size:12px}
+.btn-outline{background:none;border:1px solid var(--border2);color:var(--muted2)}
+.btn-outline:hover{border-color:var(--accent);color:var(--accent)}
+.btn-danger{background:var(--critical)}
+.btn-warn{background:var(--warn);color:#000}
+.btn-ok{background:var(--ok);color:#000}
+
+/* ── Cards / Grid ── */
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px}
+.grid-2{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:20px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px}
+.card-sm{padding:12px}
+.card-title{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:8px}
+.card-value{font-size:26px;font-weight:700;line-height:1}
+.card-sub{font-size:12px;color:var(--muted);margin-top:5px}
+.section-title{font-size:14px;font-weight:600;color:var(--text);margin-bottom:12px;margin-top:4px;display:flex;align-items:center;gap:8px}
+
+/* ── Badges / Risk ── */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;white-space:nowrap}
+.badge-low{background:#14532d33;color:#4ade80;border:1px solid #22c55e33}
+.badge-moderate{background:#1e3a5f33;color:#60a5fa;border:1px solid #3b82f633}
+.badge-elevated{background:#7c2d1233;color:#fb923c;border:1px solid #f9731633}
+.badge-high{background:#7f1d1d33;color:#f87171;border:1px solid #ef444433}
+.badge-critical{background:#450a0a;color:#ef4444;border:1px solid #dc262655;animation:pulse 1s infinite}
+.badge-live{background:#14532d33;color:#4ade80;border:1px solid #22c55e22;font-size:10px}
+.badge-sim{background:#7c2d1233;color:#fb923c;border:1px solid #f9731622;font-size:10px}
+.badge-hist{background:#1e3a5f33;color:#60a5fa;border:1px solid #3b82f622;font-size:10px}
+.badge-pred{background:#3b0764aa;color:#c084fc;border:1px solid #a855f733;font-size:10px}
+
+/* ── Tables ── */
+.table{width:100%;border-collapse:collapse}
+.table th{text-align:left;padding:8px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap}
+.table td{padding:9px 12px;border-bottom:1px solid var(--border)33;font-size:13px;vertical-align:middle}
+.table tr:last-child td{border-bottom:none}
+.table tr:hover td{background:var(--surface2)88}
+
+/* ── Progress ── */
+.progress-bar{height:5px;background:var(--border);border-radius:3px;overflow:hidden;min-width:60px}
+.progress-fill{height:100%;border-radius:3px;transition:.5s}
+
+/* ── Alerts ── */
+.alert-item{padding:11px 14px;border-radius:6px;margin-bottom:8px;border-left:3px solid}
+.alert-critical{background:#450a0a33;border-color:var(--critical)}
+.alert-high{background:#7f1d1d22;border-color:var(--danger)}
+.alert-warning{background:#78350f22;border-color:var(--warn)}
+.alert-info{background:#1e3a5f22;border-color:var(--accent)}
+
+/* ── Sensors ── */
+.sensor-dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:5px;flex-shrink:0}
+.s-online{background:var(--ok)}
+.s-stale{background:var(--warn)}
+.s-frozen{background:var(--accent)}
+.s-offline,.s-unreliable{background:var(--danger)}
+
+/* ── Forms ── */
+input[type=text],input[type=number],select,textarea{background:var(--surface2);border:1px solid var(--border2);color:var(--text);padding:7px 11px;border-radius:6px;font-size:13px;outline:none;width:100%}
+input:focus,select:focus,textarea:focus{border-color:var(--accent)}
+label.field-label{font-size:11px;color:var(--muted);display:block;margin-bottom:4px}
+
+/* ── Spinner ── */
+@keyframes spin{to{transform:rotate(360deg)}}
+.spinner{width:14px;height:14px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;display:inline-block;vertical-align:middle}
+
+/* ── Tab pages ── */
+.tab-page{display:none}
+.tab-page.active{display:block}
+
+/* ── Chat ── */
+.chat-box{height:320px;overflow-y:auto;border:1px solid var(--border);border-radius:6px;padding:12px;background:var(--surface2);margin-bottom:12px;scroll-behavior:smooth}
+.chat-msg{margin-bottom:10px}
+.chat-msg .role{font-size:10px;color:var(--muted);margin-bottom:3px;text-transform:uppercase;letter-spacing:.05em}
+.chat-msg .content{background:var(--surface3);padding:9px 12px;border-radius:6px;font-size:13px;line-height:1.65}
+.chat-msg.assistant .content{background:#1e3a5f22;border-left:2px solid var(--accent)}
+.chat-msg.system .content{background:transparent;color:var(--muted);font-size:12px;font-style:italic;padding:4px 0}
+
+/* ── Predictions ── */
+.pred-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:10px}
+.trend-up{color:var(--danger)}
+.trend-dup{color:var(--critical)}
+.trend-down{color:var(--ok)}
+.trend-ddown{color:var(--accent)}
+.trend-stable{color:var(--muted)}
+.ew-box{background:#450a0a44;border:1px solid var(--critical)88;border-radius:6px;padding:10px 12px;margin-top:8px;font-size:12px;line-height:1.7;color:#fca5a5}
+
+/* ── Risk gauge ── */
+.risk-gauge{position:relative;display:flex;flex-direction:column;align-items:center;padding:16px 0 8px}
+.risk-score-big{font-size:56px;font-weight:800;line-height:1;margin:8px 0 4px}
+.risk-bar-wrap{width:100%;height:8px;background:linear-gradient(90deg,var(--ok),var(--moderate),var(--warn),var(--danger),var(--critical));border-radius:4px;position:relative;margin:8px 0}
+.risk-bar-marker{position:absolute;top:-4px;width:16px;height:16px;border-radius:50%;background:#fff;border:3px solid var(--surface);box-shadow:0 0 0 2px var(--text);transform:translateX(-50%);transition:.5s}
+
+/* ── Workflow ── */
+.workflow-step{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:80px}
+.workflow-step .step-icon{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;border:2px solid var(--border2);background:var(--surface2);transition:.3s}
+.workflow-step .step-icon.active{border-color:var(--accent);background:#1e3a5f55;box-shadow:0 0 12px #4f8ef755}
+.workflow-step .step-icon.done{border-color:var(--ok);background:#14532d33}
+.workflow-step .step-label{font-size:10px;color:var(--muted);text-align:center;font-weight:500;letter-spacing:.04em}
+.workflow-arrow{color:var(--border2);font-size:20px;padding-top:12px}
+
+/* ── Zone cards ── */
+.zone-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px}
+.zone-name{font-size:16px;font-weight:700;margin-bottom:4px}
+.zone-meta{font-size:12px;color:var(--muted);margin-bottom:12px}
+
+/* ── Scrollbars ── */
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+
+/* ── Empty state ── */
+.empty{color:var(--muted);padding:20px;text-align:center;font-size:13px}
+
+/* ── Separator ── */
+.sep{height:1px;background:var(--border);margin:16px 0}
+</style>
+</head>
+<body>
+
+<!-- ══════════════ TOP BAR ══════════════ -->
+<div id="topbar">
+  <div class="status-dot pulsing" id="sysDot"></div>
+  <div>
+    <div class="top-title">SMART INDUSTRIAL POLLUTION MONITORING</div>
+    <div class="top-sub">Agentic AI Environmental Monitoring &amp; Decision Support — Gujarat Golden Corridor</div>
+  </div>
+  <div style="margin-left:auto;display:flex;align-items:center;gap:10px;flex-shrink:0">
+    <span class="source-badge" id="liveSimBadge">● SIMULATED</span>
+    <span class="ws-chip off" id="wsChip">⬤ WS</span>
+    <span id="lastUpdate" style="font-size:11px;color:var(--muted)">—</span>
+    <button class="btn btn-sm btn-outline" onclick="refreshAll()">↻ Refresh</button>
+  </div>
+</div>
+
+<div id="app">
+
+<!-- ══════════════ SIDEBAR ══════════════ -->
+<div id="sidebar">
+  <div class="sidebar-logo">
+    <div class="app-name">Pollution Monitor AI</div>
+    <div class="app-sub">Gujarat Golden Corridor<br>Vapi · Ankleshwar · Vatva</div>
+  </div>
+
+  <div class="sidebar-section">
+    <div class="sidebar-label">Monitor</div>
+    <button class="nav-btn active" onclick="showPage('dashboard',this)"><span class="icon">⬛</span>Dashboard</button>
+    <button class="nav-btn" onclick="showPage('monitoring',this)"><span class="icon">📡</span>Live Monitoring</button>
+    <button class="nav-btn" onclick="showPage('zones',this)"><span class="icon">🗺</span>Golden Corridor</button>
+    <button class="nav-btn" onclick="showPage('risk',this)"><span class="icon">⚠</span>Risk &amp; Compliance</button>
+    <button class="nav-btn" onclick="showPage('alerts',this)"><span class="icon">🔔</span>Alerts <span class="nav-badge" id="alertBadge" style="display:none">0</span></button>
+    <button class="nav-btn" onclick="showPage('incidents',this)"><span class="icon">📋</span>Incidents</button>
+  </div>
+
+  <div class="sidebar-section">
+    <div class="sidebar-label">Intelligence</div>
+    <button class="nav-btn" onclick="showPage('predictions',this)"><span class="icon">📈</span>Predictions</button>
+    <button class="nav-btn" onclick="showPage('rootcause',this)"><span class="icon">🔍</span>Root Cause</button>
+    <button class="nav-btn" onclick="showPage('assistant',this)"><span class="icon">🤖</span>AI Assistant</button>
+    <button class="nav-btn" onclick="showPage('workflow',this)"><span class="icon">⚙</span>Agent Workflow</button>
+  </div>
+
+  <div class="sidebar-section">
+    <div class="sidebar-label">Tools</div>
+    <button class="nav-btn" onclick="showPage('simulator',this)"><span class="icon">🧪</span>Simulator</button>
+    <button class="nav-btn" onclick="showPage('sources',this)"><span class="icon">🗄</span>Data Sources</button>
+    <button class="nav-btn" onclick="showPage('audit',this)"><span class="icon">📜</span>Audit Log</button>
+  </div>
+
+  <div style="padding:12px 16px;margin-top:auto;border-top:1px solid var(--border)">
+    <div style="font-size:11px;color:var(--muted)">Granite AI</div>
+    <div style="font-size:12px;margin-top:2px" id="graniteStatus">Checking...</div>
+  </div>
+</div>
+
+<!-- ══════════════ MAIN CONTENT ══════════════ -->
+<div id="content">
+<div id="main-area">
+
+<!-- ════ DASHBOARD PAGE ════ -->
+<div id="page-dashboard" class="tab-page active">
+  <div class="grid-4" id="summaryCards">
+    <div class="card card-sm"><div class="card-title">Overall Risk</div><div class="card-value" id="ovRisk" style="color:var(--warn)">—</div><div class="card-sub" id="ovRiskLevel">Loading...</div></div>
+    <div class="card card-sm"><div class="card-title">Active Alerts</div><div class="card-value" id="ovAlerts" style="color:var(--danger)">—</div><div class="card-sub">Unresolved</div></div>
+    <div class="card card-sm"><div class="card-title">Active Incidents</div><div class="card-value" id="ovIncidents" style="color:var(--warn)">—</div><div class="card-sub">Open events</div></div>
+    <div class="card card-sm"><div class="card-title">Sensors Online</div><div class="card-value" id="ovSensors" style="color:var(--ok)">—</div><div class="card-sub" id="ovSensorSub">of total</div></div>
+  </div>
+  <div class="grid-4">
+    <div class="card card-sm"><div class="card-title">Industries Monitored</div><div class="card-value" id="ovIndustries">—</div><div class="card-sub">Across 3 zones</div></div>
+    <div class="card card-sm"><div class="card-title">High/Critical Risk</div><div class="card-value" id="ovHighRisk" style="color:var(--critical)">—</div><div class="card-sub">Industries</div></div>
+    <div class="card card-sm"><div class="card-title">Data Sources</div><div class="card-value" id="ovSources">—</div><div class="card-sub">Registered</div></div>
+    <div class="card card-sm"><div class="card-title">Granite AI</div><div class="card-value" id="ovGranite" style="font-size:16px">—</div><div class="card-sub">AI assistant</div></div>
+  </div>
+
+  <div class="section-title">Industry Risk Overview</div>
+  <div class="card" style="margin-bottom:20px;overflow-x:auto">
+    <table class="table" id="industryTable">
+      <thead><tr><th>Industry</th><th>Zone</th><th>Type</th><th>Risk Score</th><th>Risk Level</th><th>Breaches</th><th>Anomalies</th><th>Last Assessed</th><th>Action</th></tr></thead>
+      <tbody id="industryTableBody"><tr><td colspan="9" class="empty"><div class="spinner"></div> Loading...</td></tr></tbody>
+    </table>
+  </div>
+
+  <div class="grid-2">
+    <div>
+      <div class="section-title">Recent Alerts</div>
+      <div id="dashAlerts"><div class="empty">Loading...</div></div>
+    </div>
+    <div>
+      <div class="section-title">Agent Workflow Status</div>
+      <div class="card">
+        <div style="display:flex;align-items:flex-start;gap:4px;flex-wrap:wrap" id="miniWorkflow">
+          <div class="workflow-step"><div class="step-icon done" id="wf-observe">👁</div><div class="step-label">OBSERVE</div></div>
+          <div class="workflow-arrow">→</div>
+          <div class="workflow-step"><div class="step-icon done" id="wf-validate">✓</div><div class="step-label">VALIDATE</div></div>
+          <div class="workflow-arrow">→</div>
+          <div class="workflow-step"><div class="step-icon done" id="wf-analyze">🔬</div><div class="step-label">ANALYZE</div></div>
+          <div class="workflow-arrow">→</div>
+          <div class="workflow-step"><div class="step-icon done" id="wf-predict">📈</div><div class="step-label">PREDICT</div></div>
+          <div class="workflow-arrow">→</div>
+          <div class="workflow-step"><div class="step-icon done" id="wf-decide">⚖</div><div class="step-label">DECIDE</div></div>
+          <div class="workflow-arrow">→</div>
+          <div class="workflow-step"><div class="step-icon active" id="wf-act">📢</div><div class="step-label">ACT</div></div>
+          <div class="workflow-arrow">→</div>
+          <div class="workflow-step"><div class="step-icon" id="wf-monitor">📊</div><div class="step-label">MONITOR</div></div>
+          <div class="workflow-arrow">→</div>
+          <div class="workflow-step"><div class="step-icon" id="wf-learn">🧠</div><div class="step-label">LEARN</div></div>
+        </div>
+        <div style="margin-top:12px;font-size:12px;color:var(--muted)" id="wfStatus">Orchestrator running — poll every 30s</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════ LIVE MONITORING PAGE ════ -->
+<div id="page-monitoring" class="tab-page">
+  <div style="display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap">
+    <select id="monUnitSel" onchange="loadMonitoring()" style="max-width:280px"></select>
+    <button class="btn btn-sm" onclick="loadMonitoring()">↻ Refresh</button>
+    <span style="font-size:12px;color:var(--muted)">Auto-refresh every 15s</span>
+  </div>
+  <div class="section-title">Current Pollutant Readings</div>
+  <div id="pollCards" class="grid-4" style="min-height:60px"><div class="empty" style="grid-column:1/-1">Select a unit above</div></div>
+  <div class="sep"></div>
+  <div class="section-title">Sensor Status</div>
+  <div class="card" style="overflow-x:auto">
+    <table class="table">
+      <thead><tr><th>Sensor ID</th><th>Pollutant</th><th>Media</th><th>Reliability</th><th>Status</th><th>Last Seen</th></tr></thead>
+      <tbody id="sensorTbody"><tr><td colspan="6" class="empty">Select a unit</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ════ GOLDEN CORRIDOR ZONES PAGE ════ -->
+<div id="page-zones" class="tab-page">
+  <div class="section-title">Golden Corridor — Zone Overview</div>
+  <div class="grid-3" id="zoneCards"><div class="empty">Loading zones...</div></div>
+  <div class="sep"></div>
+  <div class="section-title">All Industries by Zone</div>
+  <div class="card" style="overflow-x:auto">
+    <table class="table">
+      <thead><tr><th>Zone</th><th>Industry</th><th>Type</th><th>Risk</th><th>Level</th><th>Breaches</th><th>Sensors</th></tr></thead>
+      <tbody id="zoneTableBody"><tr><td colspan="7" class="empty"><div class="spinner"></div></td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ════ RISK & COMPLIANCE PAGE ════ -->
+<div id="page-risk" class="tab-page">
+  <div style="display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap">
+    <select id="riskUnitSel" onchange="loadRisk()" style="max-width:280px"></select>
+    <button class="btn btn-sm" onclick="loadRisk()">↻ Refresh</button>
+  </div>
+  <div class="grid-2">
+    <div class="card" id="riskGaugeCard">
+      <div class="card-title">Risk Score</div>
+      <div class="risk-gauge">
+        <div id="riskScoreBig" class="risk-score-big" style="color:var(--muted)">—</div>
+        <div id="riskLevelBig" style="font-size:14px;font-weight:600;color:var(--muted)">Select a unit</div>
+        <div class="risk-bar-wrap" style="margin-top:12px"><div class="risk-bar-marker" id="riskMarker" style="left:0%"></div></div>
+        <div style="width:100%;display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-top:4px">
+          <span>LOW</span><span>MODERATE</span><span>ELEVATED</span><span>HIGH</span><span>CRITICAL</span>
+        </div>
+      </div>
+      <div style="margin-top:8px;font-size:12px;color:var(--muted)" id="riskConfidence"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Contributing Factors</div>
+      <div id="riskFactors" style="margin-top:8px"><div class="empty">Select a unit</div></div>
+    </div>
+  </div>
+  <div class="sep"></div>
+  <div class="section-title">Threshold Compliance Summary</div>
+  <div class="card" id="complianceCard"><div class="empty">Select a unit to view compliance</div></div>
+</div>
+
+<!-- ════ ALERTS PAGE ════ -->
+<div id="page-alerts" class="tab-page">
+  <div style="display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap">
+    <select id="alertSeverityFil" onchange="loadAlerts()" style="max-width:160px">
+      <option value="">All Severities</option>
+      <option value="CRITICAL">CRITICAL</option>
+      <option value="HIGH">HIGH</option>
+      <option value="WARNING">WARNING</option>
+      <option value="INFO">INFO</option>
+    </select>
+    <select id="alertStatusFil" onchange="loadAlerts()" style="max-width:160px">
+      <option value="">All Statuses</option>
+      <option value="ACTIVE">ACTIVE</option>
+      <option value="ACKNOWLEDGED">ACKNOWLEDGED</option>
+      <option value="RESOLVED">RESOLVED</option>
+    </select>
+    <button class="btn btn-sm" onclick="loadAlerts()">↻ Refresh</button>
+  </div>
+  <div id="alertsList"><div class="empty">Loading alerts...</div></div>
+</div>
+
+<!-- ════ INCIDENTS PAGE ════ -->
+<div id="page-incidents" class="tab-page">
+  <div style="display:flex;gap:10px;align-items:center;margin-bottom:16px">
+    <select id="incStatusFil" onchange="loadIncidents()" style="max-width:160px">
+      <option value="">All Statuses</option>
+      <option value="OPEN">Open</option>
+      <option value="INVESTIGATING">Investigating</option>
+      <option value="RESOLVED">Resolved</option>
+    </select>
+    <button class="btn btn-sm" onclick="loadIncidents()">↻ Refresh</button>
+  </div>
+  <div id="incidentsList"><div class="empty">Loading incidents...</div></div>
+</div>
+
+<!-- ════ PREDICTIONS PAGE ════ -->
+<div id="page-predictions" class="tab-page">
+  <div style="display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap">
+    <select id="predUnitSel" onchange="loadPredictions()" style="max-width:280px"></select>
+    <button class="btn btn-sm" onclick="loadPredictions()">↻ Refresh</button>
+  </div>
+  <div id="predCards"><div class="empty">Select a unit to view predictions</div></div>
+</div>
+
+<!-- ════ ROOT CAUSE PAGE ════ -->
+<div id="page-rootcause" class="tab-page">
+  <div style="display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap">
+    <select id="rcUnitSel" onchange="loadRootCause()" style="max-width:280px"></select>
+    <button class="btn btn-sm" onclick="loadRootCause()">↻ Refresh</button>
+  </div>
+  <div id="rcContent"><div class="empty">Select a unit. Root cause analysis is generated from open incidents.</div></div>
+</div>
+
+<!-- ════ AI ASSISTANT PAGE ════ -->
+<div id="page-assistant" class="tab-page">
+  <div class="grid-2" style="max-width:960px">
+    <div>
+      <div class="section-title">Granite AI Assistant</div>
+      <div class="card">
+        <div class="chat-box" id="chatBox">
+          <div class="chat-msg system"><div class="content">AI Assistant powered by IBM Granite / watsonx.ai. Answers are based solely on current system data. Not a legal finding.</div></div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <input type="text" id="chatInput" placeholder="Ask about pollution, risks, incidents, alerts..." onkeydown="if(event.key==='Enter')sendChat()">
+          <button class="btn" onclick="sendChat()">Send</button>
+        </div>
+        <div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:6px" id="chatSuggestions"></div>
+        <div style="margin-top:8px;font-size:11px;color:var(--muted)" id="graniteNote">⬤ Checking Granite status...</div>
+      </div>
+    </div>
+    <div>
+      <div class="section-title">Context</div>
+      <div class="card">
+        <label class="field-label">Unit context (optional)</label>
+        <select id="chatUnitSel" style="margin-bottom:12px"></select>
+        <div style="font-size:12px;color:var(--muted);line-height:1.7">
+          <strong>Example questions:</strong><br>
+          • What is causing the current pollution spike?<br>
+          • Which zone has the highest risk right now?<br>
+          • Which pollutants are near their thresholds?<br>
+          • Explain the current risk score for VAPI-001.<br>
+          • What should the operator investigate first?<br>
+          • Summarise the active incidents.
+        </div>
+        <div class="sep"></div>
+        <div style="font-size:11px;color:var(--muted)">
+          ⓘ Granite handles explanations and natural-language queries only.<br>
+          Threshold checks, risk scores and safety decisions are always deterministic Python — never overridden by AI.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════ AGENT WORKFLOW PAGE ════ -->
+<div id="page-workflow" class="tab-page">
+  <div class="section-title">Agent Workflow — OBSERVE → LEARN</div>
+  <div class="card" style="max-width:860px;margin-bottom:20px">
+    <div style="display:flex;justify-content:space-around;align-items:flex-start;padding:8px 0;flex-wrap:wrap;gap:8px">
+      <div class="workflow-step"><div class="step-icon done" id="wfp-observe">👁</div><div class="step-label">OBSERVE</div></div>
+      <div class="workflow-arrow">→</div>
+      <div class="workflow-step"><div class="step-icon done" id="wfp-validate">✅</div><div class="step-label">VALIDATE</div></div>
+      <div class="workflow-arrow">→</div>
+      <div class="workflow-step"><div class="step-icon done" id="wfp-analyze">🔬</div><div class="step-label">ANALYZE</div></div>
+      <div class="workflow-arrow">→</div>
+      <div class="workflow-step"><div class="step-icon done" id="wfp-predict">📈</div><div class="step-label">PREDICT</div></div>
+      <div class="workflow-arrow">→</div>
+      <div class="workflow-step"><div class="step-icon done" id="wfp-decide">⚖</div><div class="step-label">DECIDE</div></div>
+      <div class="workflow-arrow">→</div>
+      <div class="workflow-step"><div class="step-icon active" id="wfp-act">📢</div><div class="step-label">ACT</div></div>
+      <div class="workflow-arrow">→</div>
+      <div class="workflow-step"><div class="step-icon" id="wfp-monitor">📊</div><div class="step-label">MONITOR</div></div>
+      <div class="workflow-arrow">→</div>
+      <div class="workflow-step"><div class="step-icon" id="wfp-learn">🧠</div><div class="step-label">LEARN</div></div>
+    </div>
+  </div>
+  <div class="grid-2" style="max-width:860px">
+    <div class="card">
+      <div class="card-title">Orchestrator Status</div>
+      <div id="wfOrcStatus" style="margin-top:8px"><div class="spinner"></div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">System Capabilities</div>
+      <div style="margin-top:8px;font-size:12px;line-height:2;color:var(--muted2)">
+        <div>✅ Multi-source data ingestion (REST/CSV/MQTT/Simulated)</div>
+        <div>✅ Data quality validation &amp; sensor reliability scoring</div>
+        <div>✅ Regulatory threshold engine (CPCB/NAAQS)</div>
+        <div>✅ Anomaly detection (Z-score + EWMA + CUSUM)</div>
+        <div>✅ Prediction engine (linear regression + EWMA)</div>
+        <div>✅ Risk scoring (deterministic 0–100)</div>
+        <div>✅ Root cause analysis (structured hypotheses)</div>
+        <div>✅ Alert dispatch (WebSocket + Email + Webhook)</div>
+        <div id="wfSklearn">⬜ Isolation Forest (needs scikit-learn)</div>
+        <div id="wfGranite">⬜ IBM Granite AI (needs credentials)</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Bounded Autonomy — MAY</div>
+      <div style="margin-top:8px;font-size:12px;line-height:2;color:var(--ok)">
+        <div>✅ Detect anomalies &amp; generate alerts</div>
+        <div>✅ Increase monitoring frequency</div>
+        <div>✅ Generate predictions &amp; recommendations</div>
+        <div>✅ Request additional data</div>
+        <div>✅ Escalate events &amp; notify operators</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Bounded Autonomy — MUST NOT</div>
+      <div style="margin-top:8px;font-size:12px;line-height:2;color:var(--danger)">
+        <div>❌ Shut down factories or equipment</div>
+        <div>❌ Issue legal penalties or confirmed violations</div>
+        <div>❌ Make irreversible autonomous decisions</div>
+        <div>❌ Fabricate regulatory findings</div>
+        <div>❌ Let AI override deterministic safety rules</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════ SIMULATOR PAGE ════ -->
+<div id="page-simulator" class="tab-page">
+  <div class="section-title">Pollution Event Simulator</div>
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">Inject Event Mode</div>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-top:12px">
+        <div>
+          <label class="field-label">Industrial Unit</label>
+          <select id="simUnitSel" style="max-width:280px"></select>
+        </div>
+        <div>
+          <label class="field-label">Event Mode</label>
+          <select id="simMode">
+            <option value="NORMAL">🟢 NORMAL — Baseline levels</option>
+            <option value="WARNING">🟡 WARNING — 1.5× baseline (approaching threshold)</option>
+            <option value="HIGH_RISK">🟠 HIGH_RISK — 1.8× baseline (threshold breach)</option>
+            <option value="CRITICAL">🔴 CRITICAL — 2.5× baseline (severe multi-pollutant)</option>
+            <option value="RECOVERY">🔵 RECOVERY — 0.6× baseline (improving)</option>
+          </select>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn" onclick="injectSim()">▶ Inject Event</button>
+          <button class="btn btn-outline" onclick="triggerMonitor()">⚡ Trigger Monitor Cycle</button>
+        </div>
+        <div style="font-size:11px;color:var(--muted);padding:8px;background:var(--surface2);border-radius:6px;line-height:1.6">
+          ⓘ Source type will be tagged <strong>SIMULATED</strong> — never presented as live data.<br>
+          Changes take effect on the next monitoring cycle or when triggered manually.
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Quick Analyze Reading</div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px">
+        <div class="grid-2" style="gap:8px;margin-bottom:0">
+          <div><label class="field-label">Unit ID</label><input type="text" id="anaUnit" placeholder="VAPI-001"></div>
+          <div><label class="field-label">Zone</label><input type="text" id="anaZone" placeholder="Vapi"></div>
+        </div>
+        <div><label class="field-label">Sensor ID</label><input type="text" id="anaSensor" placeholder="VAPI-001-AIR-01"></div>
+        <div class="grid-2" style="gap:8px;margin-bottom:0">
+          <div>
+            <label class="field-label">Pollutant</label>
+            <select id="anaPollutant">
+              <option>SO2</option><option>NO2</option><option>PM2.5</option><option>PM10</option>
+              <option>H2S</option><option>CO</option><option>VOC</option><option>NH3</option>
+              <option>pH</option><option>COD</option><option>BOD</option><option>TSS</option>
+              <option>DO</option><option>Turbidity</option>
+            </select>
+          </div>
+          <div><label class="field-label">Media</label>
+            <select id="anaMedia"><option value="AIR">AIR</option><option value="WATER">WATER</option></select>
+          </div>
+        </div>
+        <div class="grid-2" style="gap:8px;margin-bottom:0">
+          <div><label class="field-label">Value</label><input type="number" id="anaValue" placeholder="e.g. 150"></div>
+          <div><label class="field-label">Unit</label><input type="text" id="anaUnitStr" placeholder="µg/m³"></div>
+        </div>
+        <button class="btn" onclick="analyzeReading()">🔬 Analyze</button>
+      </div>
+    </div>
+  </div>
+  <div id="simResult" style="margin-top:16px"></div>
+</div>
+
+<!-- ════ DATA SOURCES PAGE ════ -->
+<div id="page-sources" class="tab-page">
+  <div style="display:flex;gap:10px;align-items:center;margin-bottom:16px">
+    <div class="section-title" style="margin:0">Registered Data Sources</div>
+    <button class="btn btn-sm" onclick="loadSources()">↻ Refresh</button>
+  </div>
+  <div class="card" style="overflow-x:auto">
+    <table class="table">
+      <thead><tr><th>Source ID</th><th>Name</th><th>Type</th><th>Quality</th><th>Status</th><th>Last Success</th><th>Failures</th></tr></thead>
+      <tbody id="srcTbody"><tr><td colspan="7" class="empty"><div class="spinner"></div></td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ════ AUDIT LOG PAGE ════ -->
+<div id="page-audit" class="tab-page">
+  <div style="display:flex;gap:10px;align-items:center;margin-bottom:16px">
+    <div class="section-title" style="margin:0">Audit Log — System Decisions</div>
+    <button class="btn btn-sm" onclick="loadAudit()">↻ Refresh</button>
+  </div>
+  <div class="card" id="auditContent" style="overflow-x:auto">
+    <div class="empty">Loading audit log...</div>
+  </div>
+</div>
+
+</div><!-- /main-area -->
+</div><!-- /content -->
+</div><!-- /app -->
+
+<script>
+const API = '';
+let _industries = [];
+
+// ══════════════════════════════════════════════════════════
+// Navigation
+// ══════════════════════════════════════════════════════════
+function showPage(name, btn){
+  document.querySelectorAll('.tab-page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  if(btn) btn.classList.add('active');
+  // Lazy-load page data
+  if(name==='monitoring') loadMonitoring();
+  if(name==='zones') loadZones();
+  if(name==='risk') loadRisk();
+  if(name==='alerts') loadAlerts();
+  if(name==='incidents') loadIncidents();
+  if(name==='predictions') loadPredictions();
+  if(name==='rootcause') loadRootCause();
+  if(name==='sources') loadSources();
+  if(name==='audit') loadAudit();
+  if(name==='workflow') loadWorkflow();
+  if(name==='assistant') initAssistant();
+}
+
+// ══════════════════════════════════════════════════════════
+// API helpers
+// ══════════════════════════════════════════════════════════
+async function apiFetch(path){
+  const r = await fetch(API+path);
+  if(!r.ok) throw new Error('HTTP '+r.status+' '+path);
+  return r.json();
+}
+async function apiPost(path, body){
+  const r = await fetch(API+path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  return r.json();
+}
+
+// ══════════════════════════════════════════════════════════
+// WebSocket
+// ══════════════════════════════════════════════════════════
+let ws;
+function connectWS(){
+  const proto = location.protocol==='https:'?'wss':'ws';
+  try{
+    ws = new WebSocket(proto+'://'+location.host+'/ws/alerts');
+    ws.onopen=()=>{
+      document.getElementById('wsChip').textContent='⬤ Live';
+      document.getElementById('wsChip').className='ws-chip';
+    };
+    ws.onclose=()=>{
+      document.getElementById('wsChip').textContent='⬤ WS';
+      document.getElementById('wsChip').className='ws-chip off';
+      setTimeout(connectWS,4000);
+    };
+    ws.onmessage=e=>{
+      try{ const m=JSON.parse(e.data); if(m.type==='alert') injectLiveAlert(m); }catch(_){}
+    };
+    setInterval(()=>{ if(ws&&ws.readyState===1) ws.send('ping'); },25000);
+  }catch(_){}
+}
+connectWS();
+
+function injectLiveAlert(a){
+  const box = document.getElementById('dashAlerts');
+  if(!box) return;
+  const cls = {'CRITICAL':'alert-critical','HIGH':'alert-high','WARNING':'alert-warning'}[a.severity]||'alert-info';
+  const el = document.createElement('div');
+  el.className='alert-item '+cls;
+  el.innerHTML='<strong>['+a.severity+'] '+(a.title||'Alert')+'</strong><br><span style="font-size:12px;color:var(--muted)">'+(a.zone||'')+'&nbsp;·&nbsp;Risk: '+(a.risk_score||'—')+'&nbsp;·&nbsp;'+new Date().toLocaleTimeString()+'</span>';
+  box.insertBefore(el, box.firstChild);
+  if(box.children.length>15) box.removeChild(box.lastChild);
+}
+
+// ══════════════════════════════════════════════════════════
+// Helpers
+// ══════════════════════════════════════════════════════════
+function riskBadge(lvl){
+  const cls={'LOW':'badge-low','MODERATE':'badge-moderate','ELEVATED':'badge-elevated','HIGH':'badge-high','CRITICAL':'badge-critical'}[lvl]||'badge-low';
+  return '<span class="badge '+cls+'">'+(lvl||'—')+'</span>';
+}
+function riskColor(lvl){
+  return {'LOW':'var(--ok)','MODERATE':'var(--moderate)','ELEVATED':'var(--elevated)','HIGH':'var(--danger)','CRITICAL':'var(--critical)'}[lvl]||'var(--muted)';
+}
+function srcBadge(t){
+  if(!t) return '';
+  const cls={'LIVE':'badge-live','SIMULATED':'badge-sim','HISTORICAL':'badge-hist','PREDICTED':'badge-pred'}[t]||'badge-hist';
+  return '<span class="badge '+cls+'">'+t+'</span>';
+}
+function fmt(v,digits=1){ return v!=null?Number(v).toFixed(digits):'—'; }
+function fmtTime(ts){ return ts?new Date(ts).toLocaleTimeString():'—'; }
+function fmtDateTime(ts){ return ts?new Date(ts).toLocaleString():'—'; }
+
+function populateSelects(units){
+  _industries = units;
+  const selIds = ['monUnitSel','riskUnitSel','predUnitSel','rcUnitSel','simUnitSel','chatUnitSel'];
+  selIds.forEach(id=>{
+    const sel = document.getElementById(id);
+    if(!sel||sel.options.length>1) return;
+    units.forEach(u=>{
+      const o=document.createElement('option');
+      o.value=u.unit_id; o.textContent=u.name+' ('+u.zone+')';
+      sel.appendChild(o);
+    });
+  });
+}
+
+// ══════════════════════════════════════════════════════════
+// Dashboard / Overview
+// ══════════════════════════════════════════════════════════
+async function loadDashboard(){
+  try{
+    const [health, ind, alData, incData] = await Promise.all([
+      apiFetch('/health'),
+      apiFetch('/industries'),
+      apiFetch('/alerts?status=ACTIVE&limit=8'),
+      apiFetch('/incidents?status=OPEN&limit=5'),
+    ]);
+
+    // Top bar
+    document.getElementById('lastUpdate').textContent = 'Updated '+new Date().toLocaleTimeString();
+    const dot = document.getElementById('sysDot');
+    dot.className = 'status-dot pulsing '+(health.status==='healthy'?'':'warn');
+
+    // Granite status
+    const ga = health.granite_available;
+    document.getElementById('graniteStatus').innerHTML = ga
+      ? '<span style="color:var(--ok)">● Connected</span>'
+      : '<span style="color:var(--muted)">● Not configured</span>';
+    document.getElementById('ovGranite').innerHTML = ga
+      ? '<span style="color:var(--ok);font-size:14px">● Online</span>'
+      : '<span style="color:var(--muted);font-size:14px">○ Demo mode</span>';
+
+    // Summary cards
+    const industries = ind.industries||[];
+    const highRisk = industries.filter(i=>['HIGH','CRITICAL'].includes(i.risk_level));
+    const maxRisk = industries.reduce((m,i)=>Math.max(m,i.risk_score||0),0);
+    const maxLevel = industries.find(i=>i.risk_score===maxRisk)?.risk_level||'LOW';
+
+    document.getElementById('ovRisk').textContent = fmt(maxRisk,0);
+    document.getElementById('ovRisk').style.color = riskColor(maxLevel);
+    document.getElementById('ovRiskLevel').innerHTML = riskBadge(maxLevel);
+    document.getElementById('ovAlerts').textContent = alData.count||0;
+    document.getElementById('ovIncidents').textContent = incData.count||0;
+    document.getElementById('ovSensors').textContent = health.system.online_sensors;
+    document.getElementById('ovSensorSub').textContent = 'of '+health.system.total_sensors+' total';
+    document.getElementById('ovIndustries').textContent = industries.length;
+    document.getElementById('ovHighRisk').textContent = highRisk.length;
+    document.getElementById('ovSources').textContent = '—';
+
+    // Alert badge in nav
+    const count = alData.count||0;
+    const badge = document.getElementById('alertBadge');
+    badge.textContent = count;
+    badge.style.display = count>0?'':'none';
+
+    // Industry table
+    const tbody = document.getElementById('industryTableBody');
+    if(industries.length){
+      tbody.innerHTML = industries.map(u=>`
+        <tr>
+          <td><strong>${u.name}</strong></td>
+          <td>${u.zone}</td><td>${u.industry_type||'—'}</td>
+          <td>
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="font-weight:600;min-width:36px">${fmt(u.risk_score,1)}</span>
+              <div class="progress-bar" style="width:80px"><div class="progress-fill" style="width:${u.risk_score||0}%;background:${riskColor(u.risk_level)}"></div></div>
+            </div>
+          </td>
+          <td>${riskBadge(u.risk_level)}</td>
+          <td>${u.active_breaches||0}</td>
+          <td>${u.active_anomalies||0}</td>
+          <td style="color:var(--muted);font-size:12px">${fmtTime(u.last_assessed_at)}</td>
+          <td><button class="btn btn-sm btn-outline" onclick="goToRisk('${u.unit_id}')">Risk ›</button></td>
+        </tr>`).join('');
+    } else {
+      tbody.innerHTML = '<tr><td colspan="9" class="empty">No data — waiting for first monitoring cycle</td></tr>';
+    }
+
+    // Dashboard alerts
+    const alertsBox = document.getElementById('dashAlerts');
+    const alerts = alData.alerts||[];
+    alertsBox.innerHTML = alerts.length ? alerts.map(a=>{
+      const cls={'CRITICAL':'alert-critical','HIGH':'alert-high','WARNING':'alert-warning','INFO':'alert-info'}[a.severity]||'alert-info';
+      return `<div class="alert-item ${cls}">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start">
+          <strong>[${a.severity}] ${a.title}</strong>
+          <span style="font-size:11px;color:var(--muted)">${fmtTime(a.created_at)}</span>
+        </div>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px">${a.zone||''} · Pollutant: ${a.pollutant||'—'} · Risk: ${fmt(a.risk_score,0)||'—'}</div>
+      </div>`;
+    }).join('') : '<div class="empty">No active alerts</div>';
+
+    populateSelects(industries);
+  }catch(e){ console.error('loadDashboard',e); }
+}
+
+function goToRisk(unitId){
+  document.querySelectorAll('.nav-btn').forEach(b=>{
+    if(b.textContent.includes('Risk')) { b.classList.add('active'); } else { b.classList.remove('active'); }
+  });
+  showPage('risk');
+  const sel=document.getElementById('riskUnitSel');
+  if(sel){ sel.value=unitId; loadRisk(); }
+}
+
+// ══════════════════════════════════════════════════════════
+// Live Monitoring
+// ══════════════════════════════════════════════════════════
+async function loadMonitoring(){
+  const uid = document.getElementById('monUnitSel')?.value;
+  if(!uid) return;
+  try{
+    const [cur, sensors] = await Promise.all([
+      apiFetch('/pollution/current?unit_id='+uid),
+      apiFetch('/sensors?unit_id='+uid),
+    ]);
+    const unitData = cur.units?.[uid];
+    const cards = document.getElementById('pollCards');
+    if(unitData?.readings?.length){
+      cards.innerHTML = unitData.readings.map(r=>{
+        const qc = r.quality_score!=null?(r.quality_score*100).toFixed(0)+'%':'—';
+        return `<div class="card card-sm">
+          <div class="card-title" style="display:flex;justify-content:space-between">${r.pollutant} ${srcBadge(r.source_type)}</div>
+          <div class="card-value" style="margin-top:4px">${fmt(r.value,2)} <span style="font-size:13px;font-weight:400;color:var(--muted)">${r.unit||''}</span></div>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px">Quality: ${qc} · ${fmtTime(r.timestamp)}</div>
+        </div>`;
+      }).join('');
+    } else {
+      cards.innerHTML = '<div class="empty" style="grid-column:1/-1">No readings yet — monitoring cycle pending</div>';
+    }
+
+    document.getElementById('sensorTbody').innerHTML = (sensors.sensors||[]).map(s=>{
+      const rel = s.reliability_score||1;
+      const cls = 's-'+(s.status||'online').toLowerCase();
+      return `<tr>
+        <td style="font-size:12px">${s.sensor_id}</td>
+        <td>${s.pollutant}</td><td>${s.media}</td>
+        <td><div style="display:flex;align-items:center;gap:6px">
+          <div class="progress-bar" style="width:70px"><div class="progress-fill" style="width:${rel*100}%;background:${rel>0.7?'var(--ok)':rel>0.4?'var(--warn)':'var(--danger)'}"></div></div>
+          <span style="font-size:12px">${(rel*100).toFixed(0)}%</span>
+        </div></td>
+        <td><span class="sensor-dot ${cls}"></span>${s.status}</td>
+        <td style="font-size:12px;color:var(--muted)">${fmtTime(s.last_seen)}</td>
+      </tr>`;
+    }).join('') || '<tr><td colspan="6" class="empty">No sensors found</td></tr>';
+  }catch(e){ console.error('loadMonitoring',e); }
+}
+
+// ══════════════════════════════════════════════════════════
+// Golden Corridor Zones
+// ══════════════════════════════════════════════════════════
+async function loadZones(){
+  try{
+    const ind = await apiFetch('/industries');
+    const industries = ind.industries||[];
+    const zones = {};
+    industries.forEach(u=>{
+      if(!zones[u.zone]) zones[u.zone]={name:u.zone,units:[],maxRisk:0,maxLevel:'LOW',alerts:0,breaches:0};
+      zones[u.zone].units.push(u);
+      if((u.risk_score||0)>zones[u.zone].maxRisk){ zones[u.zone].maxRisk=u.risk_score||0; zones[u.zone].maxLevel=u.risk_level; }
+      zones[u.zone].breaches+=(u.active_breaches||0);
+    });
+
+    const zoneNames = ['Vapi','Ankleshwar','Vatva'];
+    const zoneDescs = {
+      'Vapi':'GIDC Special Industrial Area — Chemical, Pharma, Textile',
+      'Ankleshwar':'GIDC Chemical/Pharma Cluster — Largest GIDC in Asia',
+      'Vatva':'GIDC Vatva — Chemical &amp; Textile Processing'
+    };
+
+    document.getElementById('zoneCards').innerHTML = zoneNames.map(z=>{
+      const zd = zones[z]||{name:z,units:[],maxRisk:0,maxLevel:'LOW',breaches:0};
+      return `<div class="zone-card">
+        <div class="zone-name" style="color:${riskColor(zd.maxLevel)}">${z}</div>
+        <div class="zone-meta">${zoneDescs[z]||''}</div>
+        <div class="grid-2" style="gap:8px;margin-bottom:0">
+          <div><div style="font-size:11px;color:var(--muted)">Max Risk</div><div style="font-weight:700;font-size:20px;color:${riskColor(zd.maxLevel)}">${fmt(zd.maxRisk,0)}</div></div>
+          <div><div style="font-size:11px;color:var(--muted)">Level</div><div style="margin-top:2px">${riskBadge(zd.maxLevel)}</div></div>
+          <div><div style="font-size:11px;color:var(--muted)">Industries</div><strong>${zd.units.length}</strong></div>
+          <div><div style="font-size:11px;color:var(--muted)">Breaches</div><strong style="color:${zd.breaches>0?'var(--danger)':'var(--ok)'}">${zd.breaches}</strong></div>
+        </div>
+      </div>`;
+    }).join('');
+
+    document.getElementById('zoneTableBody').innerHTML = industries.map(u=>`
+      <tr>
+        <td>${u.zone}</td>
+        <td><strong>${u.name}</strong></td>
+        <td>${u.industry_type||'—'}</td>
+        <td>${fmt(u.risk_score,1)}</td>
+        <td>${riskBadge(u.risk_level)}</td>
+        <td>${u.active_breaches||0}</td>
+        <td>${(u.sensors||[]).length||'—'}</td>
+      </tr>`).join('') || '<tr><td colspan="7" class="empty">No data</td></tr>';
+  }catch(e){ console.error('loadZones',e); }
+}
+
+// ══════════════════════════════════════════════════════════
+// Risk & Compliance
+// ══════════════════════════════════════════════════════════
+async function loadRisk(){
+  const uid = document.getElementById('riskUnitSel')?.value;
+  if(!uid) return;
+  try{
+    const data = await apiFetch('/risk/'+uid);
+    const score = data.risk_score||0;
+    const lvl = data.risk_level||'LOW';
+    document.getElementById('riskScoreBig').textContent = fmt(score,1);
+    document.getElementById('riskScoreBig').style.color = riskColor(lvl);
+    document.getElementById('riskLevelBig').innerHTML = riskBadge(lvl);
+    document.getElementById('riskMarker').style.left = Math.min(98,Math.max(1,score))+'%';
+    document.getElementById('riskConfidence').textContent = data.confidence!=null ? 'Confidence: '+(data.confidence*100).toFixed(0)+'%' : '';
+
+    const factors = data.contributing_factors||[];
+    document.getElementById('riskFactors').innerHTML = factors.length ? factors.map(f=>`
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border)33">
+        <div>
+          <div style="font-size:13px;font-weight:500">${f.component||'—'}</div>
+          <div style="font-size:11px;color:var(--muted)">${f.detail||''}</div>
+        </div>
+        <div style="font-weight:700;color:${(f.pts||0)>0?'var(--danger)':'var(--ok)'};font-size:14px">${(f.pts||0)>0?'+':''}${fmt(f.pts,1)}</div>
+      </div>`).join('') : '<div class="empty">No contributing factors (risk is LOW)</div>';
+
+    // Compliance: show threshold breaches from incidents if available
+    const compCard = document.getElementById('complianceCard');
+    const ind = _industries.find(i=>i.unit_id===uid);
+    const breaches = ind?.active_breaches||0;
+    const anomalies = ind?.active_anomalies||0;
+    compCard.innerHTML = `
+      <div class="grid-4" style="margin-bottom:0">
+        <div><div class="card-title">Threshold Breaches</div><div class="card-value" style="color:${breaches>0?'var(--danger)':'var(--ok)'}">${breaches}</div></div>
+        <div><div class="card-title">Active Anomalies</div><div class="card-value" style="color:${anomalies>0?'var(--warn)':'var(--ok)'}">${anomalies}</div></div>
+        <div><div class="card-title">Dominant Pollutant</div><div class="card-value" style="font-size:18px">${data.dominant_pollutant||'—'}</div></div>
+        <div><div class="card-title">Assessed</div><div style="font-size:13px;margin-top:8px">${fmtDateTime(data.assessed_at)}</div></div>
+      </div>
+      <div style="margin-top:12px;padding:10px;background:var(--surface2);border-radius:6px;font-size:12px;color:var(--muted);line-height:1.7">
+        ⓘ <strong>Compliance Note:</strong> This system detects "Potential Violation Detected" conditions based on reference CPCB/NAAQS thresholds.
+        It does NOT confirm legal violations. Always verify with official gazette notifications and qualified environmental officers.
+      </div>`;
+  }catch(e){ console.error('loadRisk',e); }
+}
+
+// ══════════════════════════════════════════════════════════
+// Alerts
+// ══════════════════════════════════════════════════════════
+async function loadAlerts(){
+  const sev = document.getElementById('alertSeverityFil')?.value||'';
+  const sta = document.getElementById('alertStatusFil')?.value||'';
+  let url = '/alerts?limit=100';
+  if(sev) url+='&severity='+sev;
+  if(sta) url+='&status='+sta;
+  try{
+    const data = await apiFetch(url);
+    const alerts = data.alerts||[];
+    document.getElementById('alertsList').innerHTML = alerts.length ? alerts.map(a=>{
+      const cls={'CRITICAL':'alert-critical','HIGH':'alert-high','WARNING':'alert-warning','INFO':'alert-info'}[a.severity]||'alert-info';
+      return `<div class="alert-item ${cls}">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
+          <div>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+              <strong>[${a.severity}]</strong>
+              <span>${a.title}</span>
+              ${srcBadge(a.source_type)}
+            </div>
+            <div style="font-size:12px;color:var(--muted);display:flex;flex-wrap:wrap;gap:10px">
+              <span>Zone: <strong>${a.zone||'—'}</strong></span>
+              <span>Pollutant: <strong>${a.pollutant||'—'}</strong></span>
+              ${a.value!=null?'<span>Value: <strong>'+fmt(a.value,2)+'</strong></span>':''}
+              ${a.threshold!=null?'<span>Threshold: <strong>'+fmt(a.threshold,2)+'</strong></span>':''}
+              <span>Risk: <strong>${fmt(a.risk_score,0)||'—'}</strong></span>
+            </div>
+          </div>
+          <div style="text-align:right;flex-shrink:0">
+            <div style="font-size:11px;color:var(--muted)">${fmtDateTime(a.created_at)}</div>
+            <div style="margin-top:4px">${riskBadge(a.risk_level)}</div>
+            ${a.status==='ACTIVE'?'<button class="btn btn-sm btn-outline" style="margin-top:6px" onclick="ackAlert(\''+a.id+'\')">Acknowledge</button>':'<span style="font-size:11px;color:var(--muted)">'+a.status+'</span>'}
+          </div>
+        </div>
+        ${a.message?'<div style="margin-top:6px;font-size:12px;padding:6px 8px;background:var(--surface2);border-radius:4px">'+a.message+'</div>':''}
+        ${a.granite_explanation?'<div style="margin-top:6px;font-size:12px;color:var(--accent2);padding:6px 8px;background:#1e3a5f22;border-radius:4px;border-left:2px solid var(--accent)"><strong>AI:</strong> '+a.granite_explanation+'</div>':''}
+      </div>`;
+    }).join('') : '<div class="empty">No alerts match the current filter</div>';
+  }catch(e){ console.error('loadAlerts',e); }
+}
+
+async function ackAlert(id){
+  try{
+    await apiPost('/alerts/'+id+'/acknowledge', {});
+    loadAlerts();
+  }catch(e){ console.error('ackAlert',e); }
+}
+
+// ══════════════════════════════════════════════════════════
+// Incidents
+// ══════════════════════════════════════════════════════════
+async function loadIncidents(){
+  const sta = document.getElementById('incStatusFil')?.value||'';
+  try{
+    const data = await apiFetch('/incidents'+(sta?'?status='+sta:''));
+    const incidents = data.incidents||[];
+    document.getElementById('incidentsList').innerHTML = incidents.length ? incidents.map(i=>{
+      const cls={'CRITICAL':'alert-critical','HIGH':'alert-high','WARNING':'alert-warning'}[i.severity]||'alert-info';
+      const pollutants = (i.pollutants_involved||[]).join(', ')||'—';
+      return `<div class="alert-item ${cls}">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start">
+          <strong>${i.title}</strong>
+          <span>${riskBadge(i.risk_level)}</span>
+        </div>
+        <div style="margin-top:4px;font-size:12px;color:var(--muted)">${i.description||''}</div>
+        <div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:12px;font-size:12px">
+          <span>Zone: <strong>${i.zone}</strong></span>
+          <span>Pollutants: <strong>${pollutants}</strong></span>
+          <span>Status: <strong>${i.status}</strong></span>
+          <span>Risk: <strong>${fmt(i.risk_score,1)}</strong></span>
+          <span>Created: <strong>${fmtDateTime(i.created_at)}</strong></span>
+        </div>
+        ${i.granite_summary?'<div style="margin-top:8px;padding:8px;background:var(--surface2);border-radius:4px;font-size:12px;border-left:2px solid var(--accent);color:var(--accent2)"><strong>AI Summary:</strong> '+i.granite_summary+'</div>':''}
+      </div>`;
+    }).join('') : '<div class="empty">No incidents found</div>';
+  }catch(e){ console.error('loadIncidents',e); }
+}
+
+// ══════════════════════════════════════════════════════════
+// Predictions
+// ══════════════════════════════════════════════════════════
+async function loadPredictions(){
+  const uid = document.getElementById('predUnitSel')?.value;
+  if(!uid) return;
+  try{
+    const data = await apiFetch('/predictions/'+uid);
+    const preds = data.predictions||[];
+    const trendMap={'RAPIDLY_INCREASING':'↑↑ Rapidly Rising','INCREASING':'↑ Increasing','STABLE':'→ Stable','DECREASING':'↓ Decreasing','RAPIDLY_DECREASING':'↓↓ Rapidly Falling','UNKNOWN':'? Unknown'};
+    const trendCls={'RAPIDLY_INCREASING':'trend-dup','INCREASING':'trend-up','STABLE':'trend-stable','DECREASING':'trend-down','RAPIDLY_DECREASING':'trend-ddown','UNKNOWN':'trend-stable'};
+
+    document.getElementById('predCards').innerHTML = preds.length ? preds.map(p=>`
+      <div class="pred-card">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div style="display:flex;align-items:center;gap:8px">
+            <strong style="font-size:15px">${p.pollutant}</strong>
+            ${srcBadge('PREDICTED')}
+          </div>
+          <span class="${trendCls[p.trend]||'trend-stable'}" style="font-size:15px;font-weight:600">${trendMap[p.trend]||p.trend}</span>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:12px 0;font-size:12px">
+          <div><div style="color:var(--muted)">Current</div><strong style="font-size:15px">${fmt(p.current_value,2)}</strong> <span style="color:var(--muted)">${p.unit||''}</span></div>
+          <div><div style="color:var(--muted)">Predicted (${p.horizon_minutes}min)</div><strong style="font-size:15px">${fmt(p.predicted_value,2)}</strong> <span style="color:var(--muted)">${p.unit||''}</span></div>
+          <div><div style="color:var(--muted)">Worst Case</div><strong style="font-size:15px;color:var(--warn)">${fmt(p.worst_case_value,2)}</strong> <span style="color:var(--muted)">${p.unit||''}</span></div>
+          <div><div style="color:var(--muted)">Confidence</div><strong style="font-size:15px">${(p.confidence*100).toFixed(0)}%</strong></div>
+        </div>
+        ${p.threshold_value?'<div style="font-size:12px;color:var(--muted)">Threshold: <strong>'+fmt(p.threshold_value,2)+' '+p.unit+'</strong></div>':''}
+        ${p.breach_predicted?'<div class="ew-box">⚠ EARLY WARNING — Threshold crossing predicted within '+p.horizon_minutes+' minutes.'+(p.breach_eta_minutes!=null?' ETA ~'+p.breach_eta_minutes+' min.':'')+'</div>':''}
+        ${(p.evidence||[]).length?'<div style="margin-top:8px;font-size:11px;color:var(--muted)">'+(p.evidence||[]).join(' · ')+'</div>':''}
+      </div>`).join('') : '<div class="empty">No predictions available yet — awaiting sufficient sensor data to build models</div>';
+  }catch(e){ console.error('loadPredictions',e); }
+}
+
+// ══════════════════════════════════════════════════════════
+// Root Cause Analysis (from incidents)
+// ══════════════════════════════════════════════════════════
+async function loadRootCause(){
+  const uid = document.getElementById('rcUnitSel')?.value;
+  const box = document.getElementById('rcContent');
+  if(!uid){ box.innerHTML='<div class="empty">Select a unit above</div>'; return; }
+  try{
+    const data = await apiFetch('/incidents?unit_id='+uid+'&limit=5');
+    const incidents = data.incidents||[];
+    if(!incidents.length){
+      box.innerHTML='<div class="empty">No open incidents for this unit — system is currently below alert threshold</div>';
+      return;
+    }
+    box.innerHTML = incidents.map(inc=>{
+      const breaches = inc.threshold_breaches||[];
+      const pollutants = (inc.pollutants_involved||[]).join(', ')||'—';
+      return `<div class="card" style="margin-bottom:14px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
+          <div>
+            <div style="font-size:14px;font-weight:600">${inc.title}</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:2px">${inc.zone} · ${fmtDateTime(inc.created_at)}</div>
+          </div>
+          ${riskBadge(inc.risk_level)}
+        </div>
+        <div style="font-size:13px;margin-bottom:10px">${inc.description||'No description'}</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;font-size:12px;margin-bottom:10px">
+          <div><div style="color:var(--muted)">Affected Pollutants</div><strong>${pollutants}</strong></div>
+          <div><div style="color:var(--muted)">Threshold Breaches</div><strong style="color:${breaches.length?'var(--danger)':'var(--ok)'}">${breaches.length}</strong></div>
+          <div><div style="color:var(--muted)">Risk Score</div><strong>${fmt(inc.risk_score,1)}</strong></div>
+        </div>
+        <div style="padding:10px;background:var(--surface2);border-radius:6px;font-size:12px;color:var(--muted2);margin-bottom:8px;line-height:1.7">
+          <strong style="color:var(--text)">Structured Root Cause Hypotheses:</strong><br>
+          Root cause analysis runs automatically on incidents above ELEVATED risk. Possible causes include equipment malfunction, process upsets, inadequate emission control, or cross-source contamination. These are hypotheses only — not confirmed findings. Verification requires site inspection and additional data collection.
+        </div>
+        ${inc.granite_summary?'<div style="padding:10px;background:#1e3a5f22;border:1px solid var(--accent)33;border-radius:6px;font-size:12px;color:var(--accent2)"><strong>AI Analysis:</strong> '+inc.granite_summary+'</div>':'<div style="font-size:11px;color:var(--muted);font-style:italic">Configure IBM Granite credentials for AI-generated root cause explanations.</div>'}
+      </div>`;
+    }).join('');
+  }catch(e){ console.error('loadRootCause',e); box.innerHTML='<div class="empty">Error loading root cause data</div>'; }
+}
+
+// ══════════════════════════════════════════════════════════
+// Data Sources
+// ══════════════════════════════════════════════════════════
+async function loadSources(){
+  try{
+    const data = await apiFetch('/data-sources');
+    const sources = data.live_sources||[];
+    document.getElementById('srcTbody').innerHTML = sources.length ? sources.map(s=>{
+      const q=s.quality_score||1;
+      return `<tr>
+        <td style="font-size:12px">${s.source_id}</td>
+        <td>${s.name}</td>
+        <td><span class="badge badge-moderate" style="font-size:10px">${(s.source_type||'').replace('DataSourceType.','')}</span></td>
+        <td><div style="display:flex;align-items:center;gap:6px">
+          <div class="progress-bar" style="width:70px"><div class="progress-fill" style="width:${q*100}%;background:${q>0.7?'var(--ok)':q>0.4?'var(--warn)':'var(--danger)'}"></div></div>
+          <span style="font-size:12px">${(q*100).toFixed(0)}%</span>
+        </div></td>
+        <td><span class="sensor-dot ${s.is_active?'s-online':'s-offline'}"></span>${s.is_active?'Active':'Inactive'}</td>
+        <td style="color:var(--muted);font-size:12px">${fmtTime(s.last_success_at)}</td>
+        <td>${s.failure_count||0}</td>
+      </tr>`;
+    }).join('') : '<tr><td colspan="7" class="empty">No data sources</td></tr>';
+  }catch(e){ console.error('loadSources',e); }
+}
+
+// ══════════════════════════════════════════════════════════
+// Audit Log
+// ══════════════════════════════════════════════════════════
+async function loadAudit(){
+  const card = document.getElementById('auditContent');
+  try{
+    // Audit endpoint doesn't exist yet — show what we can from incidents + alerts
+    const [alData, incData] = await Promise.all([apiFetch('/alerts?limit=20'), apiFetch('/incidents?limit=10')]);
+    const alerts = alData.alerts||[];
+    const incidents = incData.incidents||[];
+    card.innerHTML = `
+      <div style="font-size:12px;color:var(--muted);margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--border)">
+        Audit log aggregated from active alerts and incidents. Full immutable audit trail is stored in the database.
+      </div>
+      <table class="table">
+        <thead><tr><th>Timestamp</th><th>Event</th><th>Location</th><th>Pollutant</th><th>Risk</th><th>Source</th></tr></thead>
+        <tbody>
+        ${incidents.map(i=>`<tr>
+          <td style="font-size:12px">${fmtDateTime(i.created_at)}</td>
+          <td><span class="badge badge-high" style="font-size:10px">INCIDENT</span> ${i.title}</td>
+          <td>${i.zone}</td>
+          <td>${(i.pollutants_involved||[]).join(', ')||'—'}</td>
+          <td>${riskBadge(i.risk_level)}</td>
+          <td>${srcBadge(i.source_type)}</td>
+        </tr>`).join('')}
+        ${alerts.map(a=>`<tr>
+          <td style="font-size:12px">${fmtDateTime(a.created_at)}</td>
+          <td><span class="badge badge-elevated" style="font-size:10px">ALERT</span> ${a.title}</td>
+          <td>${a.zone||'—'}</td>
+          <td>${a.pollutant||'—'}</td>
+          <td>${riskBadge(a.risk_level)}</td>
+          <td>${srcBadge(a.source_type)}</td>
+        </tr>`).join('')}
+        </tbody>
+      </table>`;
+  }catch(e){ card.innerHTML='<div class="empty">Error loading audit data</div>'; }
+}
+
+// ══════════════════════════════════════════════════════════
+// Workflow
+// ══════════════════════════════════════════════════════════
+async function loadWorkflow(){
+  try{
+    const health = await apiFetch('/health');
+    const ga = health.granite_available;
+    document.getElementById('wfGranite').innerHTML = ga
+      ? '<span style="color:var(--ok)">✅ IBM Granite AI — Connected</span>'
+      : '<span style="color:var(--muted)">⬜ IBM Granite AI — Configure credentials in .env</span>';
+    document.getElementById('wfOrcStatus').innerHTML = `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px;line-height:2">
+        <div><span style="color:var(--muted)">Status:</span> <span style="color:${health.status==='healthy'?'var(--ok)':'var(--warn)'}">${health.status}</span></div>
+        <div><span style="color:var(--muted)">Version:</span> ${health.version}</div>
+        <div><span style="color:var(--muted)">Total Sensors:</span> ${health.system.total_sensors}</div>
+        <div><span style="color:var(--muted)">Online Sensors:</span> ${health.system.online_sensors}</div>
+        <div><span style="color:var(--muted)">Active Alerts:</span> <span style="color:${health.system.active_alerts>0?'var(--danger)':'var(--ok)'}">${health.system.active_alerts}</span></div>
+        <div><span style="color:var(--muted)">Active Incidents:</span> <span style="color:${health.system.active_incidents>0?'var(--warn)':'var(--ok)'}">${health.system.active_incidents}</span></div>
+      </div>`;
+  }catch(e){}
+}
+
+// ══════════════════════════════════════════════════════════
+// AI Assistant
+// ══════════════════════════════════════════════════════════
+function initAssistant(){
+  const suggestions = [
+    "Which industries are currently highest risk?",
+    "What is causing the current SO2 spike?",
+    "Which pollutants are near their thresholds?",
+    "Summarise the active incidents.",
+    "What should the operator investigate first?",
+    "Which zone has the highest risk?",
+  ];
+  const box = document.getElementById('chatSuggestions');
+  box.innerHTML = suggestions.map(q=>`<button class="btn btn-sm btn-outline" onclick="document.getElementById('chatInput').value='${q.replace(/'/g,"\\'")}';">${q}</button>`).join('');
+}
+
+async function sendChat(){
+  const input = document.getElementById('chatInput');
+  const q = input.value.trim();
+  if(!q) return;
+  input.value='';
+  const chatBox = document.getElementById('chatBox');
+  chatBox.innerHTML += `<div class="chat-msg"><div class="role">You</div><div class="content">${q.replace(/</g,'&lt;')}</div></div>`;
+  chatBox.innerHTML += `<div class="chat-msg assistant" id="pendingMsg"><div class="role">AI Assistant (Granite)</div><div class="content"><div class="spinner"></div> Thinking...</div></div>`;
+  chatBox.scrollTop = chatBox.scrollHeight;
+  try{
+    const uid = document.getElementById('chatUnitSel')?.value||null;
+    const resp = await apiPost('/assistant/query',{question:q, unit_id:uid||undefined});
+    document.getElementById('pendingMsg').innerHTML = `<div class="role">AI Assistant (Granite)</div><div class="content">${(resp.answer||'No answer returned').replace(/</g,'&lt;')}</div>`;
+  }catch(e){
+    document.getElementById('pendingMsg').innerHTML = `<div class="role">AI Assistant (Granite)</div><div class="content" style="color:var(--danger)">Error: ${e.message}</div>`;
+  }
+  chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+// ══════════════════════════════════════════════════════════
+// Simulator
+// ══════════════════════════════════════════════════════════
+async function injectSim(){
+  const uid = document.getElementById('simUnitSel')?.value;
+  const mode = document.getElementById('simMode')?.value;
+  if(!uid){ alert('Select a unit first'); return; }
+  try{
+    const resp = await apiPost('/simulate/simulate-event',{unit_id:uid, event_mode:mode});
+    document.getElementById('simResult').innerHTML = `<div class="alert-item alert-info"><strong>✓ Event Injected</strong><br>${(resp.note||JSON.stringify(resp)).replace(/</g,'&lt;')}<br><span style="font-size:11px;color:var(--muted)">Run a monitor cycle to see the effect, or wait for the next automated cycle (30s).</span></div>`;
+  }catch(e){
+    document.getElementById('simResult').innerHTML = `<div class="alert-item alert-high">Error: ${e.message}</div>`;
+  }
+}
+
+async function triggerMonitor(){
+  try{
+    const r = await apiPost('/monitor',{});
+    document.getElementById('simResult').innerHTML = `<div class="alert-item alert-info"><strong>✓ Monitor Cycle Triggered</strong><br>Alerts: ${r.status?.active_alerts||0} · Incidents: ${r.status?.active_incidents||0}</div>`;
+    setTimeout(()=>refreshAll(),1500);
+  }catch(e){
+    document.getElementById('simResult').innerHTML = `<div class="alert-item alert-high">Monitor trigger error: ${e.message}</div>`;
+  }
+}
+
+async function analyzeReading(){
+  const payload = {
+    sensor_id: document.getElementById('anaSensor').value||'test-sensor',
+    industrial_unit_id: document.getElementById('anaUnit').value||'VAPI-001',
+    zone: document.getElementById('anaZone').value||'Vapi',
+    pollutant: document.getElementById('anaPollutant').value,
+    media: document.getElementById('anaMedia').value,
+    value: parseFloat(document.getElementById('anaValue').value),
+    unit: document.getElementById('anaUnitStr').value||'µg/m³',
+    source_type: 'SIMULATED',
+    source_id: 'dashboard-analyze',
+  };
+  if(isNaN(payload.value)){ alert('Enter a numeric value'); return; }
+  try{
+    const resp = await apiPost('/simulate/analyze', payload);
+    const rCls = {'LOW':'badge-low','MODERATE':'badge-moderate','ELEVATED':'badge-elevated','HIGH':'badge-high','CRITICAL':'badge-critical'}[resp.risk_level]||'badge-low';
+    document.getElementById('simResult').innerHTML = `
+      <div class="card">
+        <div class="card-title">Analysis Result <span class="badge badge-sim">SIMULATED</span></div>
+        <div class="grid-4" style="margin-top:12px;margin-bottom:0">
+          <div><div style="color:var(--muted);font-size:11px">Risk Score</div><div class="card-value" style="font-size:22px;color:${riskColor(resp.risk_level)}">${fmt(resp.risk_score,1)}/100</div></div>
+          <div><div style="color:var(--muted);font-size:11px">Risk Level</div><div style="margin-top:6px">${riskBadge(resp.risk_level)}</div></div>
+          <div><div style="color:var(--muted);font-size:11px">Threshold Breaches</div><div class="card-value" style="font-size:22px;color:${resp.threshold_breaches?'var(--danger)':'var(--ok)'}">${resp.threshold_breaches||0}</div></div>
+          <div><div style="color:var(--muted);font-size:11px">Anomalies</div><div class="card-value" style="font-size:22px">${resp.anomalies||0}</div></div>
+        </div>
+        ${(resp.breach_details||[]).length?`<div style="margin-top:12px"><div style="font-size:11px;color:var(--muted);margin-bottom:6px">BREACH DETAILS</div>${resp.breach_details.map(b=>`<div style="font-size:12px;padding:5px 0;border-bottom:1px solid var(--border)33;color:var(--danger)">${b.pollutant}: +${fmt(b.excess_pct,1)}% above threshold — ${b.status}</div>`).join('')}</div>`:''}
+        ${resp.prediction?`<div style="margin-top:12px;padding:10px;background:var(--surface2);border-radius:6px;font-size:12px"><span class="badge badge-pred">PREDICTED (30min)</span> <strong>${fmt(resp.prediction.predicted_value,2)} ${resp.prediction.unit}</strong> · Trend: ${resp.prediction.trend} · Confidence: ${(resp.prediction.confidence*100).toFixed(0)}%</div>`:''}
+      </div>`;
+  }catch(e){
+    document.getElementById('simResult').innerHTML = `<div class="alert-item alert-high">Analysis error: ${e.message}</div>`;
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+// Refresh all
+// ══════════════════════════════════════════════════════════
+function refreshAll(){
+  loadDashboard();
+  const active = document.querySelector('.tab-page.active')?.id?.replace('page-','');
+  if(active==='monitoring') loadMonitoring();
+  if(active==='zones') loadZones();
+  if(active==='risk') loadRisk();
+  if(active==='alerts') loadAlerts();
+  if(active==='incidents') loadIncidents();
+  if(active==='predictions') loadPredictions();
+  if(active==='sources') loadSources();
+  if(active==='workflow') loadWorkflow();
+}
+
+// ══════════════════════════════════════════════════════════
+// Init
+// ══════════════════════════════════════════════════════════
+loadDashboard();
+setInterval(refreshAll, 15000);
+</script>
+</body>
+</html>
